@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
+import tokens
 
 def run_discord_bot():
-    TOKEN = "MTA4NjUwMjA4MDI5NTk5NzQ0MA.G_UR5J.N0_Oem2zd_emcDx5BS8whKjvUHvvsS3Uen_h0g"
+
 
     intents = discord.Intents.default()
     intents.message_content = True
@@ -44,4 +45,4 @@ def run_discord_bot():
             await sender.send(f'You have an incoming reply from your message recipient: \n\n', embed=embed)
             sender = ctx.author
 
-    client.run(TOKEN)
+    client.run(tokens.TOKEN)
