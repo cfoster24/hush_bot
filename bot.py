@@ -58,6 +58,7 @@ async def message(ctx, username: str, discriminator: str, *, message: str):
         await ctx.send(f"Message sent to {user.name}#{user.discriminator}")
         # Store the last user ID for the sender, I.E. whoever called the `message` command
         last_user_id[user.id] = ctx.author.id
+        print(last_user_id)
 
 
 @client.command(brief="Sends a response to the last message received from the bot",
@@ -85,6 +86,7 @@ async def respond(ctx, *, message: str):
 
         # store the responder's ID in the recipient's last_user_id dict
         last_user_id[bot_user.id] = ctx.author.id
+        print(last_user_id)
 
 @client.command(brief="delete the most recent message sent by the bot in your DM")
 async def delete(ctx):
@@ -101,12 +103,12 @@ async def oDelete(ctx, username: str, discriminator: str):
     if user is None:
         await ctx.send("User not found")
     else:
-        if ctx.author.id not in last_user_id:
+        if user.id not in last_user_id:
             await ctx.send("Cannot delete messages if you haven't sent any to that user")
         else:
             async for msg in user.dm_channel.history():
                 if msg.author == client.user:
-                    await message.delete()
+                    await msg.delete()
                     break
 
 @client.command(brief="delete all messages from the bot in your DM")
