@@ -45,14 +45,6 @@ async def on_ready():
 @client.command(brief="Sends a private message to a user of your choice",
                 description="Syntax: Hush: message <discord username> <4-digit discriminator> <message content>")
 
-'''
-async def conversationDoesntExist(senderID,recipientID):
-    if cursor.execute("SELECT conversationID FROM DM WHERE senderID = senderID AND recipientID = recipientID") == null:
-        return true
-    return false
-'''
-
-
 async def message(ctx, username: str, discriminator: str, *, message: str):
 
 
@@ -63,9 +55,9 @@ async def message(ctx, username: str, discriminator: str, *, message: str):
     if user is None:
         await ctx.send("User not found")
     else:
-        if cursor.execute("SELECT * FROM DM WHERE senderID = ? AND recipientID = ?", (senderID,recipientID)) == null:
+        if cursor.execute("SELECT * FROM DM WHERE senderID = ? AND recipientID = ?", (senderID,recipientID)) == None:
             senderAlias = generate_alias()
-        embed = discord.Embed(title=f"You have an incoming correspondence from {alias}:\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
+        embed = discord.Embed(title=f"You have an incoming correspondence from {senderAlias}:\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
 
         message = await user.send(embed=embed)
         await ctx.send(f"Message sent to {user.name}#{user.discriminator}")
