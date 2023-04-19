@@ -24,7 +24,8 @@ def generate_alias():
 
     return random.choice(DISCORD_EMOJIS)
 
-
+database = sqlite3.connect('DM.db')
+cursor=database.cursor()
 
 async def get_user_id_by_name_and_discriminator(client, username: str, discriminator: str) -> int:
     # search through all servers the bot is in
@@ -139,5 +140,8 @@ async def delete_all(ctx):
 
 
 
+# commit to database and end stream
+cursor.commit()
+cursor.close()
 # provide a token for the bot you are running
 client.run(tokens.TOKEN)
