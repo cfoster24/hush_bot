@@ -3,6 +3,7 @@ from discord.ext import commands
 import tokens
 import random
 import sqlite3
+import emoji
 
 # intents contain info on what the bot can interact with.
 # the bot can see message content, servers, and server members
@@ -19,11 +20,11 @@ last_user_id = {"default": None}
 
 DISCORD_EMOJIS = ["😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "😗", "😙", "😚", "☺️", "🙂", "🤗", "🤔", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯", "😪", "😫", "😴", "😌", "🤓", "😛", "😜", "😝", "🤤", "😒", "😓", "😔", "😕", "🙃", "🤑", "😲", "☹️", "🙁", "😖", "😞", "😟", "😤", "😢", "😭", "😦", "😧", "😨", "😩", "🤯", "😬", "😰", "😱", "😳", "🤪", "😵", "😡", "😠", "🤬", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "😇", "🤠", "🤥", "🤫", "🤭", "🧐", "🤯", "🤪", "🤩", "🤗", "🤔", "🤨", "🤫", "🤭", "🤐", "🤑", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😱", "🤪", "🤩", "🥳", "🤠", "😈", "👿", "👹", "👺", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪"]
 
-DISCORD_EMOJIS_TEXT = [":smiley:", ":smile:", ":grinning:", ":grin:", ":joy:", ":sweat_smile:", ":rofl:", ":slightly_smiling_face:", ":upside_down_face:", ":wink:", ":smirk:", ":neutral_face:", ":expressionless:", ":unamused:", ":roll_eyes:", ":thinking:", ":flushed:", ":disappointed:", ":worried:", ":angry:", ":rage:", ":pensive:", ":confused:", ":slight_frown:", ":frowning2:", ":persevere:", ":confounded:", ":tired_face:", ":weary:", ":cry:", ":sob:", ":triumph:", ":scream:", ":fearful:", ":cold_sweat:", ":hushed:", ":frowning:", ":anguished:", ":open_mouth:", ":astonished:", ":dizzy_face:", ":zipper_mouth:", ":mask:", ":thermometer_face:", ":head_bandage:", ":sleepy:", ":sleeping:", ":zzz:", ":poop:", ":smiling_imp:", ":imp:", ":japanese_ogre:", ":japanese_goblin:", ":skull:", ":ghost:", ":alien:", ":space_invader:", ":robot:", ":smiley_cat:", ":smile_cat:", ":joy_cat:", ":heart_eyes_cat:", ":smirk_cat:", ":kissing_cat:", ":scream_cat:", ":crying_cat_face:", ":pouting_cat:", ":raised_hands:", ":clap:", ":wave:", ":thumbsup:", ":thumbsdown:", ":punch:", ":fist:", ":v:", ":ok_hand:", ":raised_hand:", ":open_hands:", ":muscle:", ":pray:", ":handshake:", ":point_up:", ":point_down:", ":point_left:", ":point_right:", ":metal:", ":vulcan_salute:", ":writing_hand:", ":nail_care:", ":lips:", ":tongue:", ":ear:", ":nose:", ":eye:", ":eyes:", ":bust_in_silhouette:", ":busts_in_silhouette:", ":speaking_head:", ":baby:", ":child:", ":boy:", ":girl:", ":man:", ":woman:", ":person_frowning:", ":person_with_pouting_face:", ":person_with_headscarf:", ":person_in_tuxedo:", ":man_in_tuxedo:", ":woman_in_tuxedo:", ":person_with_veil:", ":man_with_veil:", ":woman_with_veil:", ":blond_haired_person:", ":blond-haired-man:", ":blond-haired-woman:", ":man_red_haired:", ":woman_red_haired:", ":man_curly_haired:", ":woman_curly_haired:", ":man_white_haired:", ":woman_white_haired:", ":man_bald:", ":woman_bald:", ":bearded_person:", ":older_adult:", ":older_man:", ":older_woman:", ":man_beard:", ":woman_beard:", ":man_health_worker:", ":woman_health_worker:", ":man_student:", ":woman_student:", ":man_teacher:", ":woman_teacher:", ":man_judge:", ":woman_judge:", ":man_farmer:", ":woman_farmer:", ":man_cook:", ":woman_cook:", ":man_mechanic:", ":woman_mechanic:", ":man_factory_worker:", ":woman_factory_worker:", ":man_office_worker:", ":woman_office_worker:", ":man_scientist:", ":woman_scientist:", ":man_technologist:", ":woman_technologist:", ":man_singer:", ":woman_singer:", ":man_artist:", ":woman_artist:", ":man_pilot:"]
+DISCORD_EMOJIS_TEXT = [":smiley:", ":smile:", ":grinning:", ":grin:", ":joy:", ":sweat_smile:", ":rofl:", ":slightly_smiling_face:", ":upside_down_face:", ":wink:", ":smirk:", ":neutral_face:", ":expressionless:", ":unamused:", ":roll_eyes:", ":thinking:", ":flushed:", ":disappointed:", ":worried:", ":angry:", ":rage:", ":pensive:", ":confused:", ":slight_frown:", ":frowning2:", ":persevere:", ":confounded:", ":tired_face:", ":weary:", ":cry:", ":sob:", ":triumph:", ":scream:", ":fearful:", ":cold_sweat:", ":hushed:", ":frowning:", ":anguished:", ":open_mouth:", ":astonished:", ":dizzy_face:", ":zipper_mouth:", ":mask:", ":thermometer_face:", ":head_bandage:", ":sleepy:", ":sleeping:", ":zzz:", ":poop:", ":smiling_imp:", ":imp:", ":japanese_ogre:", ":japanese_goblin:", ":skull:", ":ghost:", ":alien:", ":space_invader:", ":robot:", ":smiley_cat:", ":smile_cat:", ":joy_cat:", ":heart_eyes_cat:", ":smirk_cat:", ":kissing_cat:", ":scream_cat:", ":crying_cat_face:", ":pouting_cat:", ":raised_hands:", ":clap:", ":wave:", ":thumbsup:", ":thumbsdown:", ":punch:", ":fist:", ":v:", ":ok_hand:", ":raised_hand:", ":open_hands:", ":muscle:", ":pray:", ":handshake:", ":point_up:", ":point_down:", ":point_left:", ":point_right:", ":metal:", ":vulcan_salute:", ":writing_hand:", ":nail_care:", ":lips:", ":tongue:", ":ear:", ":nose:", ":eye:", ":eyes:", ":bust_in_silhouette:", ":busts_in_silhouette:", ":speaking_head:", ":baby:", ":child:", ":boy:", ":girl:", ":man:", ":woman:", ":person_frowning:", ":person_with_pouting_face:", ":person_with_headscarf:", ":person_in_tuxedo:", ":man_in_tuxedo:", ":woman_in_tuxedo:", ":person_with_veil:", ":man_with_veil:", ":woman_with_veil:", ":blond_haired_person:", ":blond-haired-man:", ":blond-haired-woman:", ":man_bald:", ":woman_bald:", ":bearded_person:", ":older_adult:", ":older_man:", ":older_woman:", ":man_beard:", ":woman_beard:", ":man_health_worker:", ":woman_health_worker:", ":man_student:", ":woman_student:", ":man_teacher:", ":woman_teacher:", ":man_judge:", ":woman_judge:", ":man_farmer:", ":woman_farmer:", ":man_cook:", ":woman_cook:", ":man_mechanic:", ":woman_mechanic:", ":man_factory_worker:", ":woman_factory_worker:", ":man_office_worker:", ":woman_office_worker:", ":man_scientist:", ":woman_scientist:", ":man_technologist:", ":woman_technologist:", ":man_singer:", ":woman_singer:", ":man_artist:", ":woman_artist:", ":man_pilot:"]
 
 def generate_alias():
 
-    return random.choice(DISCORD_EMOJIS_TEXT)
+    return random.choice(DISCORD_EMOJIS)
 
 
 database = sqlite3.connect("hushBot.db")
@@ -80,8 +81,7 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
         messageID = message.id
         cursor.execute("INSERT INTO messages (messageID,senderID,recipientID,senderAlias) VALUES(?,?,?,?)", (messageID,senderID,recipientID,str(senderAlias)))
         printMSG = cursor.execute("SELECT * FROM messages WHERE messageID = messageID")
-        printMSG = cursor.fetchone()
-        print(printMSG)
+
 
         database.commit()
 
@@ -92,35 +92,44 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
 async def respond(ctx: str, alias: str, *, message: str):
     
     senderID = ctx.author.id
-    
-    cursor.execute("SELECT EXISTS(SELECT 1 FROM messages WHERE senderAlias = ? AND recipientID = ? LIMIT 1)", (alias, senderID))
-    record = cursor.fetchone()
-    if record[0] == 1:
 
-        recipientID = record[2]
+
+    print(alias)
+    cursor.execute("SELECT * FROM messages WHERE recipientID=? AND senderAlias=? LIMIT 1", (senderID, alias))
+    record = cursor.fetchone()
+    print(record)
+    if record:
+
+        recipientID = record[1]
         print(recipientID)
 
         # find the original message sender's user object
         bot_user = await client.fetch_user(recipientID)
 
-        # if there is no DM open with the bot user, create one
-        if bot_user.dm_channel is None:
-            await bot_user.create_dm()
+        cursor.execute("SELECT EXISTS(SELECT 1 FROM messages WHERE senderID=? AND recipientID = ? LIMIT 1)",
+                       (senderID, recipientID))
+        record = cursor.fetchone()
+        if record[0] == 1:
+            cursor.execute("SELECT senderAlias FROM messages WHERE senderID=? AND recipientID=? LIMIT 1",
+                           (senderID, recipientID))
+            senderAlias = cursor.fetchone()[0]
+        else:
+            print("else")
+            senderAlias = generate_alias()
 
-        
-        embed = discord.Embed(title=f"Incoming response from {alias}\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
+        embed = discord.Embed(title=f"Incoming response from {senderAlias}\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
         # alert the original sender of incoming replies
-        message = await bot_user.dm_channel.send(embed=embed)
+        message = await bot_user.send(embed=embed)
 
         # alert replier
         await ctx.send("Response sent")
         print("Response sent")
 
         messageID = message.id
-        cursor.execute("INSERT INTO messages (messageID, senderID, recipientID, senderAlias) VALUES(?, ?, ?, ?)", (messageID, senderID, recipientID, alias))
+        cursor.execute("INSERT INTO messages (messageID, senderID, recipientID, senderAlias) VALUES(?, ?, ?, ?)", (messageID, senderID, recipientID, senderAlias))
         database.commit()
     else:
-        ctx.send("No message to respond to")
+        await ctx.send("No message to respond to")
 
 @client.command(brief="delete the most recent message sent by the bot in your DM")
 async def delete(ctx: str):
