@@ -19,13 +19,16 @@ last_user_id = {"default": None}
 
 DISCORD_EMOJIS = ["😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "😗", "😙", "😚", "☺️", "🙂", "🤗", "🤔", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯", "😪", "😫", "😴", "😌", "🤓", "😛", "😜", "😝", "🤤", "😒", "😓", "😔", "😕", "🙃", "🤑", "😲", "☹️", "🙁", "😖", "😞", "😟", "😤", "😢", "😭", "😦", "😧", "😨", "😩", "🤯", "😬", "😰", "😱", "😳", "🤪", "😵", "😡", "😠", "🤬", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "😇", "🤠", "🤥", "🤫", "🤭", "🧐", "🤯", "🤪", "🤩", "🤗", "🤔", "🤨", "🤫", "🤭", "🤐", "🤑", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😱", "🤪", "🤩", "🥳", "🤠", "😈", "👿", "👹", "👺", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪"]
 
+DISCORD_EMOJIS_TEXT = [":smiley:", ":smile:", ":grinning:", ":grin:", ":joy:", ":sweat_smile:", ":rofl:", ":slightly_smiling_face:", ":upside_down_face:", ":wink:", ":smirk:", ":neutral_face:", ":expressionless:", ":unamused:", ":roll_eyes:", ":thinking:", ":flushed:", ":disappointed:", ":worried:", ":angry:", ":rage:", ":pensive:", ":confused:", ":slight_frown:", ":frowning2:", ":persevere:", ":confounded:", ":tired_face:", ":weary:", ":cry:", ":sob:", ":triumph:", ":scream:", ":fearful:", ":cold_sweat:", ":hushed:", ":frowning:", ":anguished:", ":open_mouth:", ":astonished:", ":dizzy_face:", ":zipper_mouth:", ":mask:", ":thermometer_face:", ":head_bandage:", ":sleepy:", ":sleeping:", ":zzz:", ":poop:", ":smiling_imp:", ":imp:", ":japanese_ogre:", ":japanese_goblin:", ":skull:", ":ghost:", ":alien:", ":space_invader:", ":robot:", ":smiley_cat:", ":smile_cat:", ":joy_cat:", ":heart_eyes_cat:", ":smirk_cat:", ":kissing_cat:", ":scream_cat:", ":crying_cat_face:", ":pouting_cat:", ":raised_hands:", ":clap:", ":wave:", ":thumbsup:", ":thumbsdown:", ":punch:", ":fist:", ":v:", ":ok_hand:", ":raised_hand:", ":open_hands:", ":muscle:", ":pray:", ":handshake:", ":point_up:", ":point_down:", ":point_left:", ":point_right:", ":metal:", ":vulcan_salute:", ":writing_hand:", ":nail_care:", ":lips:", ":tongue:", ":ear:", ":nose:", ":eye:", ":eyes:", ":bust_in_silhouette:", ":busts_in_silhouette:", ":speaking_head:", ":baby:", ":child:", ":boy:", ":girl:", ":man:", ":woman:", ":person_frowning:", ":person_with_pouting_face:", ":person_with_headscarf:", ":person_in_tuxedo:", ":man_in_tuxedo:", ":woman_in_tuxedo:", ":person_with_veil:", ":man_with_veil:", ":woman_with_veil:", ":blond_haired_person:", ":blond-haired-man:", ":blond-haired-woman:", ":man_red_haired:", ":woman_red_haired:", ":man_curly_haired:", ":woman_curly_haired:", ":man_white_haired:", ":woman_white_haired:", ":man_bald:", ":woman_bald:", ":bearded_person:", ":older_adult:", ":older_man:", ":older_woman:", ":man_beard:", ":woman_beard:", ":man_health_worker:", ":woman_health_worker:", ":man_student:", ":woman_student:", ":man_teacher:", ":woman_teacher:", ":man_judge:", ":woman_judge:", ":man_farmer:", ":woman_farmer:", ":man_cook:", ":woman_cook:", ":man_mechanic:", ":woman_mechanic:", ":man_factory_worker:", ":woman_factory_worker:", ":man_office_worker:", ":woman_office_worker:", ":man_scientist:", ":woman_scientist:", ":man_technologist:", ":woman_technologist:", ":man_singer:", ":woman_singer:", ":man_artist:", ":woman_artist:", ":man_pilot:"]
+
 def generate_alias():
 
+    return random.choice(DISCORD_EMOJIS_TEXT)
 
-    return random.choice(DISCORD_EMOJIS)
 
-database = sqlite3.connect('DM.db')
-cursor=database.cursor()
+database = sqlite3.connect("hushBot.db")
+
+cursor = database.cursor()
 
 async def get_user_id_by_name_and_discriminator(client, username: str, discriminator: str) -> int:
     # search through all servers the bot is in
@@ -56,8 +59,16 @@ async def message(ctx, username: str, discriminator: str, *, message: str):
     if user is None:
         await ctx.send("User not found")
     else:
-        if cursor.execute("SELECT * FROM DM WHERE senderID = ? AND recipientID = ?", (senderID,recipientID)) == None:
+        if cursor.execute("SELECT EXISTS(SELECT * FROM messages WHERE senderID = ? AND recipientID = ?)", (senderID, recipientID)) != 0:
+            print("if")
+            senderAlias = cursor.execute("SELECT senderAlias FROM messages WHERE senderID = ? AND recipientID = ?", (senderID, recipientID))
+            senderAlias = cursor.fetchone()
+
+        else:
+            print("else")
             senderAlias = generate_alias()
+
+
         embed = discord.Embed(title=f"You have an incoming correspondence from {senderAlias}:\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
 
         message = await user.send(embed=embed)
@@ -67,9 +78,12 @@ async def message(ctx, username: str, discriminator: str, *, message: str):
 
 
         messageID = message.id
-        cursor.execute("INSERT INTO DM (messageID,senderID,recipientID,senderAlias) VALUES(?,?,?,?,?)", (messageID,senderID,recipientID,senderAlias))
-        print(cursor.execute("SELECT * FROM DM WHERE messageID = messageID"))
+        cursor.execute("INSERT INTO messages (messageID,senderID,recipientID,senderAlias) VALUES(?,?,?,?)", (messageID,senderID,recipientID,str(senderAlias)))
+        printMSG = cursor.execute("SELECT * FROM messages WHERE messageID = messageID")
+        printMSG = cursor.fetchone()
+        print(printMSG)
 
+        database.commit()
 
 
 @client.command(brief="Sends a response to the last message received from the bot",
@@ -140,8 +154,10 @@ async def delete_all(ctx):
 
 
 
-# commit to database and end stream
-cursor.commit()
-cursor.close()
+
 # provide a token for the bot you are running
 client.run(tokens.TOKEN)
+
+# commit to database and end stream
+database.commit()
+cursor.close()
