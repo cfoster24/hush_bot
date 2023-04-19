@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import tokens
 import random
+import sqlite3
 
 # intents contain info on what the bot can interact with.
 # the bot can see message content, servers, and server members
@@ -43,22 +44,36 @@ async def on_ready():
 
 @client.command(brief="Sends a private message to a user of your choice",
                 description="Syntax: Hush: message <discord username> <4-digit discriminator> <message content>")
+
+'''
+async def conversationDoesntExist(senderID,recipientID):
+    if cursor.execute("SELECT conversationID FROM DM WHERE senderID = senderID AND recipientID = recipientID") == null:
+        return true
+    return false
+'''
+
+
 async def message(ctx, username: str, discriminator: str, *, message: str):
 
-    id = await get_user_id_by_name_and_discriminator(client, username, discriminator)
-    user = await client.fetch_user(id)
-    alias = generate_alias()
+    recipientID = await get_user_id_by_name_and_discriminator(client, username, discriminator)
+    user = await client.fetch_user(recipientID)
+    senderID = ctx.author.id
+
+
 
     if user is None:
         await ctx.send("User not found")
     else:
+        if cursor.execute("SELECT * FROM DM WHERE senderID = ? AND recipientID = ?", (senderID,recipientID)) == null:
+            senderAlias = generate_alias()
         embed = discord.Embed(title=f"You have an incoming correspondence from {alias}:\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
 
-        await user.send(embed=embed)
+        message = await user.send(embed=embed)
         await ctx.send(f"Message sent to {user.name}#{user.discriminator}")
         # Store the last user ID for the sender, I.E. whoever called the `message` command
-        last_user_id[user.id] = ctx.author.id
-        print(last_user_id)
+        messageID = message.id
+        cursor.execute("INSERT INTO DM (messageID,senderID,recipientID,senderAlias) VALUES(?,?,?,?,?)", (messageID,senderID,recipientID,senderAlias))
+        print(cursor.execute("SELECT * FROM DM WHERE messageID = messageID"))
 
 
 @client.command(brief="Sends a response to the last message received from the bot",
