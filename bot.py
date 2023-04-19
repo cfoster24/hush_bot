@@ -47,6 +47,7 @@ async def message(ctx, username: str, discriminator: str, *, message: str):
 
     id = await get_user_id_by_name_and_discriminator(client, username, discriminator)
     user = await client.fetch_user(id)
+
     alias = generate_alias()
 
     if user is None:
@@ -54,11 +55,14 @@ async def message(ctx, username: str, discriminator: str, *, message: str):
     else:
         embed = discord.Embed(title=f"You have an incoming correspondence from {alias}:\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
 
-        await user.send(embed=embed)
+        message = await user.send(embed=embed)
         await ctx.send(f"Message sent to {user.name}#{user.discriminator}")
+        print(f"Message sent to {user.name}#{user.discriminator}")
         # Store the last user ID for the sender, I.E. whoever called the `message` command
-        last_user_id[user.id] = ctx.author.id
-        print(last_user_id)
+
+        messageID = message.id
+
+        ctx.author.id
 
 
 @client.command(brief="Sends a response to the last message received from the bot",
@@ -83,6 +87,7 @@ async def respond(ctx, *, message: str):
 
         # alert replier
         await ctx.send("Response sent")
+        print("Response sent")
 
         # store the responder's ID in the recipient's last_user_id dict
         last_user_id[bot_user.id] = ctx.author.id
@@ -90,9 +95,11 @@ async def respond(ctx, *, message: str):
 
 @client.command(brief="delete the most recent message sent by the bot in your DM")
 async def delete(ctx):
+    # find the most recent bot message in the user's dm and delete it
     async for msg in ctx.channel.history():
         if msg.author == client.user:
             await msg.delete()
+            print("successful deletion")
             break
 
 @client.command(brief="delete the most recent message sent by the bot to a private message recipient")
@@ -103,12 +110,17 @@ async def oDelete(ctx, username: str, discriminator: str):
     if user is None:
         await ctx.send("User not found")
     else:
+        # check that the user you're trying to delete a message from is in the message cache
         if user.id not in last_user_id:
             await ctx.send("Cannot delete messages if you haven't sent any to that user")
         else:
+            # look through user's message history with the bot
             async for msg in user.dm_channel.history():
+
+                # delete the most recent bot message
                 if msg.author == client.user:
                     await msg.delete()
+                    print('successfully deleted message')
                     break
 
 @client.command(brief="delete all messages from the bot in your DM")
