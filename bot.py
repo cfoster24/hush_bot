@@ -49,7 +49,7 @@ async def on_ready():
 @client.command(brief="Sends a private message to a user of your choice",
                 description="Syntax: Hush: message <discord username> <4-digit discriminator> <message content>")
 
-async def message(ctx, username: str, discriminator: str, *, message: str):
+async def message(ctx: str, username: str, discriminator: str, *, message: str):
 
 
     recipientID = await get_user_id_by_name_and_discriminator(client, username, discriminator)
@@ -89,33 +89,41 @@ async def message(ctx, username: str, discriminator: str, *, message: str):
 @client.command(brief="Sends a response to the last message received from the bot",
                 description="Must be used after receiving a message from the `message` command."
                             " \n Syntax: Hush: respond <message content>")
-async def respond(ctx, *, message: str):
-    if ctx.author.id not in last_user_id:
-        # if the person calling the command is not present in any stored user's message history, error
-        await ctx.send("No message to respond to")
-    else:
+async def respond(ctx: str, alias: str, *, message: str):
+    
+    senderID = ctx.author.id
+    
+    cursor.execute("SELECT EXISTS(SELECT 1 FROM messages WHERE senderAlias = ? AND recipientID = ? LIMIT 1)", (alias, senderID))
+    record = cursor.fetchone()
+    if record[0] == 1:
+
+        recipientID = record[2]
+        print(recipientID)
+
         # find the original message sender's user object
-        bot_user = await client.fetch_user(last_user_id[ctx.author.id])
+        bot_user = await client.fetch_user(recipientID)
 
         # if there is no DM open with the bot user, create one
         if bot_user.dm_channel is None:
             await bot_user.create_dm()
 
-        alias = generate_alias()
+        
         embed = discord.Embed(title=f"Incoming response from {alias}\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
         # alert the original sender of incoming replies
-        await bot_user.dm_channel.send(embed=embed)
+        message = await bot_user.dm_channel.send(embed=embed)
 
         # alert replier
         await ctx.send("Response sent")
         print("Response sent")
 
-        # store the responder's ID in the recipient's last_user_id dict
-        last_user_id[bot_user.id] = ctx.author.id
-        print(last_user_id)
+        messageID = message.id
+        cursor.execute("INSERT INTO messages (messageID, senderID, recipientID, senderAlias) VALUES(?, ?, ?, ?)", (messageID, senderID, recipientID, alias))
+        database.commit()
+    else:
+        ctx.send("No message to respond to")
 
 @client.command(brief="delete the most recent message sent by the bot in your DM")
-async def delete(ctx):
+async def delete(ctx: str):
     # find the most recent bot message in the user's dm and delete it
     async for msg in ctx.channel.history():
         if msg.author == client.user:
@@ -124,7 +132,7 @@ async def delete(ctx):
             break
 
 @client.command(brief="delete the most recent message sent by the bot to a private message recipient")
-async def oDelete(ctx, username: str, discriminator: str):
+async def oDelete(ctx: str, username: str, discriminator: str):
     id = await get_user_id_by_name_and_discriminator(client, username, discriminator)
     user = await client.fetch_user(id)
 
@@ -145,7 +153,7 @@ async def oDelete(ctx, username: str, discriminator: str):
                     break
 
 @client.command(brief="delete all messages from the bot in your DM")
-async def delete_all(ctx):
+async def delete_all(ctx: str):
     messages = await ctx.dm_channel.history(limit=None).flatten()
 
     for message in messages:
