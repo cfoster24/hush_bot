@@ -59,11 +59,11 @@ async def message(ctx, username: str, discriminator: str, *, message: str):
     if user is None:
         await ctx.send("User not found")
     else:
-        if cursor.execute("SELECT EXISTS(SELECT * FROM messages WHERE senderID = ? AND recipientID = ?)", (senderID, recipientID)) != 0:
-            print("if")
-            senderAlias = cursor.execute("SELECT senderAlias FROM messages WHERE senderID = ? AND recipientID = ?", (senderID, recipientID))
-            senderAlias = cursor.fetchone()
-
+        cursor.execute("SELECT EXISTS(SELECT 1 FROM messages WHERE senderID=? AND recipientID = ? LIMIT 1)", (senderID, recipientID))
+        record = cursor.fetchone()
+        if record[0] == 1:
+            cursor.execute("SELECT senderAlias FROM messages WHERE senderID=? AND recipientID=? LIMIT 1", (senderID, recipientID))
+            senderAlias = cursor.fetchone()[0]
         else:
             print("else")
             senderAlias = generate_alias()
