@@ -31,6 +31,19 @@ database = sqlite3.connect("hushBot.db")
 
 cursor = database.cursor()
 
+async def get_alias(senderID, recipientID):
+    # check if the user has messaged the target before.
+    cursor.execute("SELECT * FROM messages WHERE senderID=? AND recipientID = ? LIMIT 1",
+                   (senderID, recipientID))
+    record = cursor.fetchone()
+    print(record)
+
+    # if yes, get the alias they had before
+    if record:
+        return record[3]
+
+    # if there is no record found, generate new alias
+    return generate_alias()
 async def get_user_id_by_name_and_discriminator(client, username: str, discriminator: str) -> int:
     # search through all servers the bot is in
     for guild in client.guilds:
@@ -60,14 +73,7 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
     if user is None:
         await ctx.send("User not found")
     else:
-        cursor.execute("SELECT EXISTS(SELECT 1 FROM messages WHERE senderID=? AND recipientID = ? LIMIT 1)", (senderID, recipientID))
-        record = cursor.fetchone()
-        if record[0] == 1:
-            cursor.execute("SELECT senderAlias FROM messages WHERE senderID=? AND recipientID=? LIMIT 1", (senderID, recipientID))
-            senderAlias = cursor.fetchone()[0]
-        else:
-            print("else")
-            senderAlias = generate_alias()
+        senderAlias = await get_alias(senderID, recipientID)
 
 
         embed = discord.Embed(title=f"You have an incoming correspondence from {senderAlias}:\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
@@ -82,7 +88,6 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
         cursor.execute("INSERT INTO messages (messageID,senderID,recipientID,senderAlias) VALUES(?,?,?,?)", (messageID,senderID,recipientID,str(senderAlias)))
         printMSG = cursor.execute("SELECT * FROM messages WHERE messageID = messageID")
 
-
         database.commit()
 
 
@@ -92,7 +97,6 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
 async def respond(ctx: str, alias: str, *, message: str):
     
     senderID = ctx.author.id
-
 
     print(alias)
     cursor.execute("SELECT * FROM messages WHERE recipientID=? AND senderAlias=? LIMIT 1", (senderID, alias))
@@ -106,16 +110,7 @@ async def respond(ctx: str, alias: str, *, message: str):
         # find the original message sender's user object
         bot_user = await client.fetch_user(recipientID)
 
-        cursor.execute("SELECT EXISTS(SELECT 1 FROM messages WHERE senderID=? AND recipientID = ? LIMIT 1)",
-                       (senderID, recipientID))
-        record = cursor.fetchone()
-        if record[0] == 1:
-            cursor.execute("SELECT senderAlias FROM messages WHERE senderID=? AND recipientID=? LIMIT 1",
-                           (senderID, recipientID))
-            senderAlias = cursor.fetchone()[0]
-        else:
-            print("else")
-            senderAlias = generate_alias()
+        senderAlias = await get_alias(senderID, recipientID)
 
         embed = discord.Embed(title=f"Incoming response from {senderAlias}\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
         # alert the original sender of incoming replies
