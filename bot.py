@@ -146,7 +146,7 @@ async def delete(ctx: str, alias: str):
                 print("successful deletion")
                 break
     else:
-        cursor.execute("SELECT senderID FROM messages WHERE recipientID = ? AND senderAlias = ?", (senderID, alias))
+        cursor.execute("SELECT senderID FROM messages WHERE recipientID = ? AND senderAlias = ? LIMIT 1", (senderID, alias))
         recipientID = cursor.fetchone()[0]
         if recipientID is None:
             await ctx.send("User not found")
@@ -168,10 +168,11 @@ async def delete(ctx: str, alias: str):
 
                         # delete the message from the database
                         cursor.execute("DELETE FROM messages WHERE messageID =?", (messageID))
-                        database.commit()
+                        
 
                         print('successfully deleted message')
                         break
+                database.commit()
             else:
                await ctx.send("Cannot delete messages if you haven't sent any to that user")
 
@@ -189,33 +190,35 @@ async def delete_all(ctx: str, alias: str):
     
     else:
         # find the ID of the user you want to delete messages you sent to
-        cursor.execute("SELECT senderID FROM messages WHERE recipientID = ? AND senderAlias = ?", (senderID, alias))
+        cursor.execute("SELECT senderID FROM messages WHERE recipientID = ? AND senderAlias = ? LIMIT 1", (senderID, alias))
         recipientID = cursor.fetchone()[0]
 
         if recipientID is None:
             await ctx.send("User not found")
         else:
             # check that there is a message in the database from you to the recipient
-            cursor.execute("SELECT messageID FROM messages WHERE senderID = ? AND recipientID = ? LIMIT 1", (senderID, recipientID))
-            record = cursor.fetchone()
-
+            cursor.execute("SELECT messageID FROM messages WHERE senderID = ? AND recipientID = ?", (senderID, recipientID))
+            record = cursor.fetchall()
+            print(record)
             recipient = await client.fetch_user(recipientID)
 
             if record:
                  # look through user's message history with the bot
                 async for msg in recipient.dm_channel.history():
-                    messageID = record[0]
-                    # delete the most recent bot message
-                    if msg.id == messageID:
+                    if msg.id in record:
+
+                        
                         # delete the message from the DM channel
                         await msg.delete()
-
+                        # remove message ID from record
+                        record.pop(record.index(msg.id))
                         # delete the message from the database
-                        cursor.execute("DELETE FROM messages WHERE messageID =?", (messageID))
-                        database.commit()
+                        cursor.execute("DELETE FROM messages WHERE messageID = ?", (msg.id))
+
+                        
 
                         print('successfully deleted message')
-                        break
+                database.commit()
             else:
                await ctx.send("Cannot delete messages if you haven't sent any to that user")
 
