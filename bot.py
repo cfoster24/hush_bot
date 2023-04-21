@@ -3,7 +3,7 @@ from discord.ext import commands
 import tokens
 import random
 import sqlite3
-import emoji
+
 
 # intents contain info on what the bot can interact with.
 # the bot can see message content, servers, and server members
@@ -20,7 +20,6 @@ last_user_id = {"default": None}
 
 DISCORD_EMOJIS = ["😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "😗", "😙", "😚", "☺️", "🙂", "🤗", "🤔", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯", "😪", "😫", "😴", "😌", "🤓", "😛", "😜", "😝", "🤤", "😒", "😓", "😔", "😕", "🙃", "🤑", "😲", "☹️", "🙁", "😖", "😞", "😟", "😤", "😢", "😭", "😦", "😧", "😨", "😩", "🤯", "😬", "😰", "😱", "😳", "🤪", "😵", "😡", "😠", "🤬", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "😇", "🤠", "🤥", "🤫", "🤭", "🧐", "🤯", "🤪", "🤩", "🤗", "🤔", "🤨", "🤫", "🤭", "🤐", "🤑", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😱", "🤪", "🤩", "🥳", "🤠", "😈", "👿", "👹", "👺", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪"]
 
-DISCORD_EMOJIS_TEXT = [":smiley:", ":smile:", ":grinning:", ":grin:", ":joy:", ":sweat_smile:", ":rofl:", ":slightly_smiling_face:", ":upside_down_face:", ":wink:", ":smirk:", ":neutral_face:", ":expressionless:", ":unamused:", ":roll_eyes:", ":thinking:", ":flushed:", ":disappointed:", ":worried:", ":angry:", ":rage:", ":pensive:", ":confused:", ":slight_frown:", ":frowning2:", ":persevere:", ":confounded:", ":tired_face:", ":weary:", ":cry:", ":sob:", ":triumph:", ":scream:", ":fearful:", ":cold_sweat:", ":hushed:", ":frowning:", ":anguished:", ":open_mouth:", ":astonished:", ":dizzy_face:", ":zipper_mouth:", ":mask:", ":thermometer_face:", ":head_bandage:", ":sleepy:", ":sleeping:", ":zzz:", ":poop:", ":smiling_imp:", ":imp:", ":japanese_ogre:", ":japanese_goblin:", ":skull:", ":ghost:", ":alien:", ":space_invader:", ":robot:", ":smiley_cat:", ":smile_cat:", ":joy_cat:", ":heart_eyes_cat:", ":smirk_cat:", ":kissing_cat:", ":scream_cat:", ":crying_cat_face:", ":pouting_cat:", ":raised_hands:", ":clap:", ":wave:", ":thumbsup:", ":thumbsdown:", ":punch:", ":fist:", ":v:", ":ok_hand:", ":raised_hand:", ":open_hands:", ":muscle:", ":pray:", ":handshake:", ":point_up:", ":point_down:", ":point_left:", ":point_right:", ":metal:", ":vulcan_salute:", ":writing_hand:", ":nail_care:", ":lips:", ":tongue:", ":ear:", ":nose:", ":eye:", ":eyes:", ":bust_in_silhouette:", ":busts_in_silhouette:", ":speaking_head:", ":baby:", ":child:", ":boy:", ":girl:", ":man:", ":woman:", ":person_frowning:", ":person_with_pouting_face:", ":person_with_headscarf:", ":person_in_tuxedo:", ":man_in_tuxedo:", ":woman_in_tuxedo:", ":person_with_veil:", ":man_with_veil:", ":woman_with_veil:", ":blond_haired_person:", ":blond-haired-man:", ":blond-haired-woman:", ":man_bald:", ":woman_bald:", ":bearded_person:", ":older_adult:", ":older_man:", ":older_woman:", ":man_beard:", ":woman_beard:", ":man_health_worker:", ":woman_health_worker:", ":man_student:", ":woman_student:", ":man_teacher:", ":woman_teacher:", ":man_judge:", ":woman_judge:", ":man_farmer:", ":woman_farmer:", ":man_cook:", ":woman_cook:", ":man_mechanic:", ":woman_mechanic:", ":man_factory_worker:", ":woman_factory_worker:", ":man_office_worker:", ":woman_office_worker:", ":man_scientist:", ":woman_scientist:", ":man_technologist:", ":woman_technologist:", ":man_singer:", ":woman_singer:", ":man_artist:", ":woman_artist:", ":man_pilot:"]
 
 def generate_alias():
 
@@ -65,9 +64,8 @@ async def on_ready():
 
 async def message(ctx: str, username: str, discriminator: str, *, message: str):
 
-
     recipientID = await get_user_id_by_name_and_discriminator(client, username, discriminator)
-    user = await client.fetch_user(recipientID)
+    recipient = await client.fetch_user(recipientID)
     senderID = ctx.author.id
 
     if user is None:
@@ -78,9 +76,9 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
 
         embed = discord.Embed(title=f"You have an incoming correspondence from {senderAlias}:\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
 
-        message = await user.send(embed=embed)
-        await ctx.send(f"Message sent to {user.name}#{user.discriminator}")
-        print(f"Message sent to {user.name}#{user.discriminator}")
+        message = await recipient.send(embed=embed)
+        await ctx.send(f"Message sent to {recipient.name}#{recipient.discriminator}")
+        print(f"Message sent to {recipient.name}#{recipient.discriminator}")
         # Store the last user ID for the sender, I.E. whoever called the `message` command
 
 
@@ -102,6 +100,7 @@ async def respond(ctx: str, alias: str, *, message: str):
     cursor.execute("SELECT * FROM messages WHERE recipientID=? AND senderAlias=? LIMIT 1", (senderID, alias))
     record = cursor.fetchone()
     print(record)
+
     if record:
 
         recipientID = record[1]
@@ -125,7 +124,7 @@ async def respond(ctx: str, alias: str, *, message: str):
         database.commit()
     else:
         await ctx.send("No message to respond to")
-
+"""
 @client.command(brief="delete the most recent message sent by the bot in your DM")
 async def delete(ctx: str):
     # find the most recent bot message in the user's dm and delete it
@@ -134,36 +133,91 @@ async def delete(ctx: str):
             await msg.delete()
             print("successful deletion")
             break
-
+"""
 @client.command(brief="delete the most recent message sent by the bot to a private message recipient")
-async def oDelete(ctx: str, username: str, discriminator: str):
-    id = await get_user_id_by_name_and_discriminator(client, username, discriminator)
-    user = await client.fetch_user(id)
-
-    if user is None:
-        await ctx.send("User not found")
+async def delete(ctx: str, alias: str):
+    senderID = ctx.author.id
+    
+    if alias is None:
+         # find the most recent bot message in the user's dm and delete it
+        async for msg in ctx.channel.history():
+            if msg.author == client.user:
+                await msg.delete()
+                print("successful deletion")
+                break
     else:
-        # check that the user you're trying to delete a message from is in the message cache
-        if user.id not in last_user_id:
-            await ctx.send("Cannot delete messages if you haven't sent any to that user")
+        cursor.execute("SELECT senderID FROM messages WHERE recipientID = ? AND senderAlias = ?", (senderID, alias))
+        recipientID = cursor.fetchone()[0]
+        if recipientID is None:
+            await ctx.send("User not found")
         else:
-            # look through user's message history with the bot
-            async for msg in user.dm_channel.history():
+            # check that there is a message in the database from you to the recipient
+            cursor.execute("SELECT messageID FROM messages WHERE senderID = ? AND recipientID = ? LIMIT 1", (senderID, recipientID))
+            record = cursor.fetchone()
 
-                # delete the most recent bot message
-                if msg.author == client.user:
-                    await msg.delete()
-                    print('successfully deleted message')
-                    break
+            recipient = await client.fetch_user(recipientID)
+
+            if record:
+                 # look through user's message history with the bot
+                async for msg in recipient.dm_channel.history():
+                    messageID = record[0]
+                    # delete the most recent bot message
+                    if msg.id == messageID:
+                        # delete the message from the DM channel
+                        await msg.delete()
+
+                        # delete the message from the database
+                        cursor.execute("DELETE FROM messages WHERE messageID =?", (messageID))
+                        database.commit()
+
+                        print('successfully deleted message')
+                        break
+            else:
+               await ctx.send("Cannot delete messages if you haven't sent any to that user")
 
 @client.command(brief="delete all messages from the bot in your DM")
-async def delete_all(ctx: str):
-    messages = await ctx.dm_channel.history(limit=None).flatten()
+async def delete_all(ctx: str, alias: str):
 
-    for message in messages:
-        if message.author == client.user:
-            await message.delete()
+    senderID = ctx.author.id
 
+    if alias is None: 
+        messages = await ctx.dm_channel.history(limit=None).flatten()
+
+        for message in messages:
+            if message.author == client.user:
+                await message.delete()
+    
+    else:
+        # find the ID of the user you want to delete messages you sent to
+        cursor.execute("SELECT senderID FROM messages WHERE recipientID = ? AND senderAlias = ?", (senderID, alias))
+        recipientID = cursor.fetchone()[0]
+
+        if recipientID is None:
+            await ctx.send("User not found")
+        else:
+            # check that there is a message in the database from you to the recipient
+            cursor.execute("SELECT messageID FROM messages WHERE senderID = ? AND recipientID = ? LIMIT 1", (senderID, recipientID))
+            record = cursor.fetchone()
+
+            recipient = await client.fetch_user(recipientID)
+
+            if record:
+                 # look through user's message history with the bot
+                async for msg in recipient.dm_channel.history():
+                    messageID = record[0]
+                    # delete the most recent bot message
+                    if msg.id == messageID:
+                        # delete the message from the DM channel
+                        await msg.delete()
+
+                        # delete the message from the database
+                        cursor.execute("DELETE FROM messages WHERE messageID =?", (messageID))
+                        database.commit()
+
+                        print('successfully deleted message')
+                        break
+            else:
+               await ctx.send("Cannot delete messages if you haven't sent any to that user")
 
 
 
