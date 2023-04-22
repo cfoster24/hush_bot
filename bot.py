@@ -1,9 +1,12 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands import BucketType
+from discord.ext.commands import CommandOnCooldown
 import tokens
 import random
 import sqlite3
-
+import asyncio
+from aiolimiter import AsyncLimiter
 
 # intents contain info on what the bot can interact with.
 # the bot can see message content, servers, and server members
@@ -15,8 +18,7 @@ intents.members = True
 # set up command prefix and authorization for bot
 client = commands.Bot(command_prefix='Hush: ', intents=intents)
 
-# dictionary for storing messenger ids
-last_user_id = {"default": None}
+rate_limiter = AsyncLimiter(5, 10)
 
 DISCORD_EMOJIS = ["😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "😗", "😙", "😚", "☺️", "🙂", "🤗", "🤔", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯", "😪", "😫", "😴", "😌", "🤓", "😛", "😜", "😝", "🤤", "😒", "😓", "😔", "😕", "🙃", "🤑", "😲", "☹️", "🙁", "😖", "😞", "😟", "😤", "😢", "😭", "😦", "😧", "😨", "😩", "🤯", "😬", "😰", "😱", "😳", "🤪", "😵", "😡", "😠", "🤬", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "😇", "🤠", "🤥", "🤫", "🤭", "🧐", "🤯", "🤪", "🤩", "🤗", "🤔", "🤨", "🤫", "🤭", "🤐", "🤑", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😱", "🤪", "🤩", "🥳", "🤠", "😈", "👿", "👹", "👺", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪"]
 
@@ -58,7 +60,6 @@ async def get_user_id_by_name_and_discriminator(client, username: str, discrimin
 async def on_ready():
     print(f'{client.user} is now running!')
 
-
 @client.command(brief="Sends a private message to a user of your choice",
                 description="Syntax: Hush: message <discord username> <4-digit discriminator> <message content>")
 
@@ -68,7 +69,7 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
     recipient = await client.fetch_user(recipientID)
     senderID = ctx.author.id
 
-    if user is None:
+    if recipient is None:
         await ctx.send("User not found")
     else:
         senderAlias = await get_alias(senderID, recipientID)
@@ -93,13 +94,18 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
                 description="Must be used after receiving a message from the `message` command."
                             " \n Syntax: Hush: respond <message content>")
 async def respond(ctx: str, alias: str, *, message: str):
-    
     senderID = ctx.author.id
 
-    print(alias)
-    cursor.execute("SELECT * FROM messages WHERE recipientID=? AND senderAlias=? LIMIT 1", (senderID, alias))
-    record = cursor.fetchone()
-    print(record)
+    if alias is None:
+        cursor.execute("SELECT * FROM messages WHERE recipientID = ? LIMIT 1", (senderID,))
+        record = cursor.fetchone()
+
+    else:
+
+        print(alias)
+        cursor.execute("SELECT * FROM messages WHERE recipientID=? AND senderAlias=? LIMIT 1", (senderID, alias))
+        record = cursor.fetchone()
+        print(record)
 
     if record:
 
@@ -136,18 +142,21 @@ async def delete(ctx: str):
 """
 @client.command(brief="delete the most recent message sent by the bot to a private message recipient")
 async def delete(ctx: str, alias: str):
+
     senderID = ctx.author.id
-    
+
     if alias is None:
          # find the most recent bot message in the user's dm and delete it
         async for msg in ctx.channel.history():
             if msg.author == client.user:
-                await msg.delete()
+                await rate_limiter.acquire()
+                await msg.delete(delay=0)
                 print("successful deletion")
                 break
     else:
         cursor.execute("SELECT senderID FROM messages WHERE recipientID = ? AND senderAlias = ? LIMIT 1", (senderID, alias))
         recipientID = cursor.fetchone()[0]
+        print(recipientID)
         if recipientID is None:
             await ctx.send("User not found")
         else:
@@ -156,39 +165,69 @@ async def delete(ctx: str, alias: str):
             record = cursor.fetchone()
 
             recipient = await client.fetch_user(recipientID)
-
+            print(recipient.name)
             if record:
-                 # look through user's message history with the bot
-                async for msg in recipient.dm_channel.history():
-                    messageID = record[0]
-                    # delete the most recent bot message
-                    if msg.id == messageID:
-                        # delete the message from the DM channel
-                        await msg.delete()
+                print(f"record found: {record}")
+                print(record[0])
+                messageID = record[0]
+                if recipient.dm_channel is not None:
+                    print("dm channel found")
 
-                        # delete the message from the database
-                        cursor.execute("DELETE FROM messages WHERE messageID =?", (messageID))
-                        
+                    # look through user's message history with the bot
+                    async for msg in recipient.dm_channel.history():
 
-                        print('successfully deleted message')
-                        break
+                        print("looking for messages")
+                        # delete the most recent bot message
+                        if msg.id == messageID:
+                            print("found message!")
+                            print(messageID)
+                            # delete the message from the DM channel
+                            await rate_limiter.acquire()
+                            await msg.delete(delay=0)
+                            print("deleted message from dm")
+                            # delete the message from the database
+                            cursor.execute("DELETE FROM messages WHERE messageID = ?", (messageID,))
+                            print('deleted message from DB')
+                            break
+                else:
+                    await client.create_dm(recipient)
+                    print("created dm with user")
+                    async for msg in recipient.dm_channel.history():
+                        print("looking for messages")
+                        # delete the most recent bot message
+                        if msg.id == messageID:
+                            print("found message")
+                            print(messageID)
+                            # delete the message from the DM channel
+                            await rate_limiter.acquire()
+                            await msg.delete(delay=0)
+                            print("deleting message from DM channel")
+                            # delete the message from the database
+                            cursor.execute("DELETE FROM messages WHERE messageID = ?", (messageID,))
+
+
+                            print('successfully deleted message from db')
+                            break
+
                 database.commit()
+                print("committed changes")
             else:
-               await ctx.send("Cannot delete messages if you haven't sent any to that user")
+                await ctx.send("Cannot delete messages if you haven't sent any to that user")
 
 @client.command(brief="delete all messages from the bot in your DM")
-async def delete_all(ctx: str, alias: str):
+async def delete_all(ctx: str, alias: str=None):
 
-    senderID = ctx.author.id
+    if alias is None:
+        async for msg in ctx.channel.history():
+            if msg.author == client.user:
+                await rate_limiter.acquire()
+                await msg.delete(delay=0)
+                print("successful deletion")
+        print("Deletion completed")
 
-    if alias is None: 
-        messages = await ctx.dm_channel.history(limit=None).flatten()
-
-        for message in messages:
-            if message.author == client.user:
-                await message.delete()
     
     else:
+        senderID = ctx.author.id
         # find the ID of the user you want to delete messages you sent to
         cursor.execute("SELECT senderID FROM messages WHERE recipientID = ? AND senderAlias = ? LIMIT 1", (senderID, alias))
         recipientID = cursor.fetchone()[0]
@@ -198,31 +237,57 @@ async def delete_all(ctx: str, alias: str):
         else:
             # check that there is a message in the database from you to the recipient
             cursor.execute("SELECT messageID FROM messages WHERE senderID = ? AND recipientID = ?", (senderID, recipientID))
-            record = cursor.fetchall()
-            print(record)
+
+            records = cursor.fetchall()
             recipient = await client.fetch_user(recipientID)
 
-            if record:
-                 # look through user's message history with the bot
-                async for msg in recipient.dm_channel.history():
-                    if msg.id in record:
+            if records:
+                print("records exist")
+                for record in records:
+                    messageID = record[0]
+                    if recipient.dm_channel is not None:
+                        print("dm channel exists")
 
-                        
-                        # delete the message from the DM channel
-                        await msg.delete()
-                        # remove message ID from record
-                        record.pop(record.index(msg.id))
-                        # delete the message from the database
-                        cursor.execute("DELETE FROM messages WHERE messageID = ?", (msg.id))
+                         # look through user's message history with the bot
+                        async for msg in recipient.dm_channel.history():
+                            print("looking for messages")
 
-                        
+                            if msg.id == messageID:
 
-                        print('successfully deleted message')
-                database.commit()
+                                print("messageID found in record")
+
+                                # delete the message from the DM channel
+                                await msg.delete(delay=0)
+                                print("deleted message")
+
+                                # delete the message from the database
+                                cursor.execute("DELETE FROM messages WHERE messageID =?", (messageID,))
+
+                                print('deleting message from db')
+                    else:
+                        await client.create_dm(recipient)
+
+                        print("dm channel exists")
+                        # look through user's message history with the bot
+                        async for msg in recipient.dm_channel.history():
+                            print("looking for messages")
+
+                            if msg.id == messageID:
+                                print("messageID found in record")
+
+                                # delete the message from the DM channel
+                                await msg.delete(delay=0)
+                                print("deleted message")
+
+                                # delete the message from the database
+                                cursor.execute("DELETE FROM messages WHERE messageID = ?", (messageID,))
+
+                                print('deleting message from db')
+                    database.commit()
+                await ctx.send(f"All messages to {alias} have been deleted")
+
             else:
                await ctx.send("Cannot delete messages if you haven't sent any to that user")
-
-
 
 # provide a token for the bot you are running
 client.run(tokens.TOKEN)
