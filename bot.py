@@ -45,7 +45,8 @@ async def get_alias(senderID, recipientID):
     else:
         cursor.execute("SELECT senderAlias FROM messages WHERE recipientID = ?", (recipientID, ))
         used_aliases = cursor.fetchall()
-        new_alias = generate_alias(DISCORD_EMOJIS - used_aliases)
+        print(used_aliases)
+        new_alias = generate_alias(list(set(DISCORD_EMOJIS) - set(used_aliases)))
         return new_alias
 
 async def get_user_id_by_name_and_discriminator(client, username: str, discriminator: str) -> int:
