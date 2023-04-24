@@ -1,11 +1,8 @@
 import discord
 from discord.ext import commands
-from discord.ext.commands import BucketType
-from discord.ext.commands import CommandOnCooldown
 import tokens
 import random
 import sqlite3
-import asyncio
 from aiolimiter import AsyncLimiter
 
 # intents contain info on what the bot can interact with.
@@ -20,10 +17,10 @@ client = commands.Bot(command_prefix='Hush: ', intents=intents)
 
 rate_limiter = AsyncLimiter(5, 10)
 
-DISCORD_EMOJIS = ["😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "😗", "😙", "😚", "🙂", "🤗", "🤔", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯", "😪", "😫", "😴", "😌", "🤓", "😛", "😜", "😝", "🤤", "😒", "😓", "😔", "😕", "🙃", "🤑", "😲", "☹️", "🙁", "😖", "😞", "😟", "😤", "😢", "😭", "😦", "😧", "😨", "😩", "🤯", "😬", "😰", "😱", "😳", "🤪", "😵", "😡", "😠", "🤬", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "😇", "🤠", "🤥", "🤫", "🤭", "🧐", "🤯", "🤪", "🤩", "🤗", "🤔", "🤨", "🤫", "🤭", "🤐", "🤑", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😱", "🤪", "🤩", "🥳", "🤠", "😈", "👿", "👹", "👺", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪"]
+DISCORD_EMOJIS = {"😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "😗", "😙", "😚", "🙂", "🤗", "🤔", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯", "😪", "😫", "😴", "😌", "🤓", "😛", "😜", "😝", "🤤", "😒", "😓", "😔", "😕", "🙃", "🤑", "😲", "☹️", "🙁", "😖", "😞", "😟", "😤", "😢", "😭", "😦", "😧", "😨", "😩", "🤯", "😬", "😰", "😱", "😳", "🤪", "😵", "😡", "😠", "🤬", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "😇", "🤠", "🤥", "🤫", "🤭", "🧐", "🤯", "🤪", "🤩", "🤗", "🤔", "🤨", "🤫", "🤭", "🤐", "🤑", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😱", "🤪", "🤩", "🥳", "🤠", "😈", "👿", "👹", "👺", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪"}
 
 
-def generate_alias(emoji_list):
+def generate_alias(emoji_list: set):
 
     return random.choice(emoji_list)
 
@@ -32,7 +29,8 @@ database = sqlite3.connect("hushBot.db")
 
 cursor = database.cursor()
 
-async def get_alias(senderID, recipientID):
+
+async def get_alias(senderID: int, recipientID: int) -> str :
     # check if the user has messaged the target before.
     cursor.execute("SELECT * FROM messages WHERE senderID=? AND recipientID = ? LIMIT 1",
                    (senderID, recipientID))
@@ -44,12 +42,13 @@ async def get_alias(senderID, recipientID):
         return record[3]
     else:
         cursor.execute("SELECT senderAlias FROM messages WHERE recipientID = ?", (recipientID, ))
-        used_aliases = cursor.fetchall()
+        used_aliases = set(cursor.fetchall())
         print(used_aliases)
-        new_alias = generate_alias(list(set(DISCORD_EMOJIS) - set(used_aliases)))
+        new_alias = generate_alias(DISCORD_EMOJIS - used_aliases)
         return new_alias
 
-async def get_user_id_by_name_and_discriminator(client, username: str, discriminator: str) -> int:
+
+async def get_user_id_by_name_and_discriminator(client: object, username: str, discriminator: str) -> int:
     # search through all servers the bot is in
     for guild in client.guilds:
         # find a member with matching username and discriminator
@@ -64,9 +63,9 @@ async def get_user_id_by_name_and_discriminator(client, username: str, discrimin
 async def on_ready():
     print(f'{client.user} is now running!')
 
+
 @client.command(brief="Sends a private message to a user of your choice",
                 description="Syntax: Hush: message <discord username> <4-digit discriminator> <message content>")
-
 async def message(ctx: str, username: str, discriminator: str, *, message: str):
 
     recipientID = await get_user_id_by_name_and_discriminator(client, username, discriminator)
@@ -78,18 +77,17 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
     else:
         senderAlias = await get_alias(senderID, recipientID)
 
-
         embed = discord.Embed(title=f"You have an incoming correspondence from {senderAlias}:\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
 
+        # store message object in variable, so we can take its ID
         message = await recipient.send(embed=embed)
         await ctx.send(f"Message sent to {recipient.name}#{recipient.discriminator}")
         print(f"Message sent to {recipient.name}#{recipient.discriminator}")
         # Store the last user ID for the sender, I.E. whoever called the `message` command
 
-
+        # create variable to add to SQL INSERT statement
         messageID = message.id
         cursor.execute("INSERT INTO messages (messageID,senderID,recipientID,senderAlias) VALUES(?,?,?,?)", (messageID,senderID,recipientID,str(senderAlias)))
-        printMSG = cursor.execute("SELECT * FROM messages WHERE messageID = messageID")
 
         database.commit()
 
@@ -134,16 +132,8 @@ async def respond(ctx: str, alias: str, *, message: str):
         database.commit()
     else:
         await ctx.send("No message to respond to")
-"""
-@client.command(brief="delete the most recent message sent by the bot in your DM")
-async def delete(ctx: str):
-    # find the most recent bot message in the user's dm and delete it
-    async for msg in ctx.channel.history():
-        if msg.author == client.user:
-            await msg.delete()
-            print("successful deletion")
-            break
-"""
+
+
 @client.command(brief="delete the most recent message sent by the bot to a private message recipient")
 async def delete(ctx: str, alias: str):
 
@@ -218,8 +208,9 @@ async def delete(ctx: str, alias: str):
             else:
                 await ctx.send("Cannot delete messages if you haven't sent any to that user")
 
+
 @client.command(brief="delete all messages from the bot in your DM")
-async def delete_all(ctx: str, alias: str=None):
+async def delete_all(ctx: str, alias: str = None):
 
     if alias is None:
         async for msg in ctx.channel.history():
@@ -252,7 +243,7 @@ async def delete_all(ctx: str, alias: str=None):
                     if recipient.dm_channel is not None:
                         print("dm channel exists")
 
-                         # look through user's message history with the bot
+                        # look through user's message history with the bot
                         async for msg in recipient.dm_channel.history():
                             print("looking for messages")
 
