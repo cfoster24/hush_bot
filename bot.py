@@ -13,7 +13,7 @@ intents.guilds = True
 intents.members = True
 
 # set up command prefix and authorization for bot
-client = commands.Bot(command_prefix='Hush: ', intents=intents)
+client = commands.Bot(command_prefix='!h ', intents=intents)
 
 rate_limiter = AsyncLimiter(5, 10)
 
@@ -65,7 +65,7 @@ async def on_ready():
 
 
 @client.command(brief="Sends a private message to a user of your choice",
-                description="Syntax: Hush: message <discord username> <4-digit discriminator> <message content>")
+                description="Syntax: !h message <discord username> <4-digit discriminator> <message content>")
 async def message(ctx: str, username: str, discriminator: str, *, message: str):
 
     recipientID = await get_user_id_by_name_and_discriminator(client, username, discriminator)
@@ -77,7 +77,7 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
     else:
         senderAlias = await get_alias(senderID, recipientID)
 
-        embed = discord.Embed(title=f"You have an incoming correspondence from {senderAlias}:\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
+        embed = discord.Embed(title=f"You have an incoming correspondence from {senderAlias}:\n\n{message}", description="To reply to this message, use the `!h r` command")
 
         # store message object in variable, so we can take its ID
         message = await recipient.send(embed=embed)
@@ -94,8 +94,8 @@ async def message(ctx: str, username: str, discriminator: str, *, message: str):
 
 @client.command(brief="Sends a response to the last message received from the bot",
                 description="Must be used after receiving a message from the `message` command."
-                            " \n Syntax: Hush: respond <message content>")
-async def respond(ctx: str, alias: str, *, message: str):
+                            " \n Syntax: !h r <message content>")
+async def r(ctx: str, alias: str, *, message: str):
     senderID = ctx.author.id
 
     if alias is None:
@@ -119,7 +119,7 @@ async def respond(ctx: str, alias: str, *, message: str):
 
         senderAlias = await get_alias(senderID, recipientID)
 
-        embed = discord.Embed(title=f"Incoming response from {senderAlias}\n\n{message}", description="To reply to this message, use the `Hush: respond` command")
+        embed = discord.Embed(title=f"Incoming response from {senderAlias}\n\n{message}", description="To reply to this message, use the `!h r` command")
         # alert the original sender of incoming replies
         message = await bot_user.send(embed=embed)
 
